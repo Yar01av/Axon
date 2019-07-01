@@ -12,6 +12,7 @@ from keras.optimizers import Adam
 from random import random
 import random
 from keras.models import load_model
+from analytical_engine import AggregPlotter
 
 
 # EPISODES = 100
@@ -62,7 +63,7 @@ class DQNAgent:
             self.epsilon *= self.epsilon_decay
 
     def _play_through(self, gym_env, batch_size=64, n_episodes=100, max_episode_length=3000, save_path="last_save.h5",
-                      load_path=None, after_step_callbacks=None, after_game_callbacks=None,
+                      explore=True, load_path=None, after_step_callbacks=None, after_gameloop_callbacks=None,
                       after_episode_callbacks=None):
         """
         Go through the main game loop (e.g. for training or just playing)
@@ -73,9 +74,10 @@ class DQNAgent:
         :param n_episodes: number of games
         :param save_path: where to save the network after training
         :param gym_env: the game environment
+        :param explore: randomize the action for exploration when true
         :param after_episode_callbacks: methods to execute after the end of an episode
         :param after_step_callbacks: methods to execute after the end of a step
-        :param after_game_callbacks: methods to execute after the end of a game (episode)
+        :param after_gameloop_callbacks: methods to execute after the end of a game (episode)
         :return: None
         """
         # Iterate the game
@@ -118,15 +120,17 @@ class DQNAgent:
         if save_path is not None:
             self.save_as(save_path)
 
-        execute_callbacks(after_game_callbacks, locals())
+        execute_callbacks(after_gameloop_callbacks, locals())
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
 
-    def act(self, state, epsilon=0.0):
-        if np.random.rand() <= epsilon:
+    def act(self, state, explore=False):
+        # Randomize the action for exploration
+        if np.random.rand() <= self.epsilon and explore:
             return random.randrange(self.action_size)
         act_values = self.model.predict(state)
+
         return np.argmax(act_values[0])  # returns action
 
     def save_as(self, path):
@@ -167,12 +171,22 @@ class DQNAgent:
         :return: None
         """
 
+        # Set up an analytical tool
+        plotter = AggregPlotter()
+
+        # Prepare callbacks
         after_step_callbacks = [lambda s: self.remember(s["state"], s["action"], s["reward"], s["next_state"],
                                                            s["done"]),
                                 lambda s: self.replay(batch_size),
-                                lambda s: self._explore_less()]
+                                lambda s: self._explore_less(),
+                                lambda s: plotter.add_to_curr_batch(s["reward"])]
+        after_episode_callbacks = [lambda s: plotter.finish_curr_batch()]
+        after_gameloop_callbacks = [lambda s: plotter.plot(aggregator=np.mean)]
+
         self._play_through(gym_env, n_episodes=n_episodes, max_episode_length=max_episode_length, save_path=save_path,
-                           load_path=load_path, after_step_callbacks=after_step_callbacks)
+                           load_path=load_path, after_step_callbacks=after_step_callbacks,
+                           after_episode_callbacks=after_episode_callbacks,
+                           after_gameloop_callbacks=after_gameloop_callbacks)
 
     def play(self, gym_env, n_episodes=100, max_episode_length=3000, load_path="last_save.h5"):
         """
@@ -186,14 +200,14 @@ class DQNAgent:
         """
 
         self._play_through(gym_env, n_episodes=n_episodes, max_episode_length=max_episode_length, load_path=load_path,
-                           after_step_callbacks=[lambda s: gym_env.render()])
+                           explore=False, after_step_callbacks=[lambda s: gym_env.render()])
 
 
 if __name__ == "__main__":
     env = gym.make('LunarLander-v2')
     agent = DQNAgent(8, 4)
-    #agent.train(env, n_episodes=400)
-    agent.play(env)
+    agent.train(env, n_episodes=400)
+    #agent.play(env)
 
 
 
