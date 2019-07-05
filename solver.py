@@ -1,7 +1,3 @@
-import datetime
-# TODO: this timing should be replaced by the analytical tool
-print(datetime.datetime.now())
-
 import gym
 import numpy as np
 from util import execute_callbacks
@@ -12,15 +8,12 @@ from keras.optimizers import Adam
 from random import random
 import random
 from keras.models import load_model
-from analytical_engine import AggregPlotter
-
+from analytical_engine import AggregPlotter, Logger
 
 # EPISODES = 100
 # MAX_EPISODE_LENGTH = 3000
 # REPLAY_SIZE = 64
-# train_flag = True  # Change this to train or see the results
 # DEFAULT_SAVE_PATH = "last_save3.h5"
-printing_resolution = 2
 
 
 # Deep Q-learning Agent
@@ -108,10 +101,6 @@ class DQNAgent:
 
                 # done becomes True, then the game ends
                 if done or time_t == max_episode_length-1:
-                    # print the score
-                    if (e % printing_resolution) == 0:
-                        print("episode: {}/{}, score: {}".format(e, n_episodes, com_reward))
-
                     # break out of the loop
                     break
 
@@ -171,16 +160,20 @@ class DQNAgent:
         :return: None
         """
 
-        # Set up an analytical tool
+        # Set up an analytical tools
         plotter = AggregPlotter()
+        logger = Logger()
 
         # Prepare callbacks
         after_step_callbacks = [lambda s: self.remember(s["state"], s["action"], s["reward"], s["next_state"],
-                                                           s["done"]),
-                                lambda s: self.replay(batch_size),
+                                                           s["done"]),  # Store the experience
+                                lambda s: self.replay(batch_size),  # Train on the experiences
                                 lambda s: self._explore_less(),
-                                lambda s: plotter.add_to_curr_batch(s["reward"])]
-        after_episode_callbacks = [lambda s: plotter.finish_curr_batch()]
+                                lambda s: plotter.add_to_curr_batch(s["reward"]),
+                                lambda s: logger.remember(s["reward"])]  # Remember for future logging
+        after_episode_callbacks = [lambda s: plotter.finish_curr_batch(),
+                                   lambda s: logger.log(f"Score: {np.sum(logger.memory)} \t Episode: {s['e']}"),
+                                   lambda s: logger.forget()]  # Empty the memory after taking the sum
         after_gameloop_callbacks = [lambda s: plotter.plot(aggregator=np.mean)]
 
         self._play_through(gym_env, n_episodes=n_episodes, max_episode_length=max_episode_length, save_path=save_path,
@@ -206,11 +199,5 @@ class DQNAgent:
 if __name__ == "__main__":
     env = gym.make('LunarLander-v2')
     agent = DQNAgent(8, 4)
-    agent.train(env, n_episodes=400)
+    agent.train(env, n_episodes=150)
     #agent.play(env)
-
-
-
-
-
-print(datetime.datetime.now())
