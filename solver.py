@@ -1,6 +1,6 @@
 import gym
 import numpy as np
-from util import execute_callbacks
+from util import execute_callbacks, get_timeseq_diff
 from keras.layers import Dense
 from keras.models import Sequential
 from collections import deque
@@ -8,6 +8,7 @@ from keras.optimizers import Adam
 from random import random
 import random
 from keras.models import load_model
+from datetime import datetime
 from analytical_engine import AggregPlotter, Logger
 
 # EPISODES = 100
@@ -169,12 +170,13 @@ class DQNAgent:
                                                            s["done"]),  # Store the experience
                                 lambda s: self.replay(batch_size),  # Train on the experiences
                                 lambda s: self._explore_less(),
-                                lambda s: plotter.add_to_curr_batch(s["reward"]),
+                                lambda s: plotter.add_to_curr_batch(datetime.now()),
                                 lambda s: logger.remember(s["reward"])]  # Remember for future logging
         after_episode_callbacks = [lambda s: plotter.finish_curr_batch(),
                                    lambda s: logger.log(f"Score: {np.sum(logger.memory)} \t Episode: {s['e']}"),
                                    lambda s: logger.forget()]  # Empty the memory after taking the sum
-        after_gameloop_callbacks = [lambda s: plotter.plot(aggregator=np.mean)]
+        after_gameloop_callbacks = [lambda s: plotter.plot(aggregator=get_timeseq_diff)]
+                                        # plot the lenghts of the games (differences of each sequence)
 
         self._play_through(gym_env, n_episodes=n_episodes, max_episode_length=max_episode_length, save_path=save_path,
                            load_path=load_path, after_step_callbacks=after_step_callbacks,
@@ -199,5 +201,5 @@ class DQNAgent:
 if __name__ == "__main__":
     env = gym.make('LunarLander-v2')
     agent = DQNAgent(8, 4)
-    agent.train(env, n_episodes=150)
+    agent.train(env, n_episodes=100)
     #agent.play(env)

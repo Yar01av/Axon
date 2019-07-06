@@ -28,11 +28,11 @@ class AggregPlotter:
         """
         Apply the aggregator and plot
 
-        :param aggregator: function to apply to each batch such that the output is one number
+        :param aggregator: How to aggregate. Type: List(int) -> List(int) || int
         """
 
         x_values = range(len(self.values))  # Create x-axis
-        data = list(map(aggregator, self.values))
+        data = list(map(aggregator, self.values))  # Aggregate and make compatible with matplotlib
 
         plt.plot(x_values, data)
         plt.show()
