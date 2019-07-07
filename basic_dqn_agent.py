@@ -1,6 +1,6 @@
 import gym
 import numpy as np
-from util import execute_callbacks, get_timeseq_diff
+from other.util import execute_callbacks, get_timeseq_diff
 from keras.layers import Dense
 from keras.models import Sequential
 from collections import deque
@@ -9,7 +9,7 @@ from random import random
 import random
 from keras.models import load_model
 from datetime import datetime
-from analytical_engine import AggregPlotter, Logger
+from other.analytical_engine import AggregPlotter, Logger
 
 # EPISODES = 100
 # MAX_EPISODE_LENGTH = 3000
@@ -19,16 +19,19 @@ from analytical_engine import AggregPlotter, Logger
 
 # Deep Q-learning Agent
 class DQNAgent:
-    def __init__(self, state_size, action_size):
+    def __init__(self, state_size, action_size, memory=deque(maxlen=1000000), gamma=0.99, epsilon=1.0, epsilon_min=0.01,
+                 epsilon_decay=0.996, learning_rate=0.001, model=None):
         self.state_size = state_size
         self.action_size = action_size
-        self.memory = deque(maxlen=1000000)
-        self.gamma = 0.99    # discount rate
-        self.epsilon = 1.0  # exploration rate
-        self.epsilon_min = 0.01
-        self.epsilon_decay = 0.996
-        self.learning_rate = 0.001
-        self.model = self._build_model()
+        self.memory = memory
+        self.gamma = gamma   # discount rate
+        self.epsilon = epsilon  # exploration rate
+        self.epsilon_min = epsilon_min
+        self.epsilon_decay = epsilon_decay
+        self.learning_rate = learning_rate
+
+        if model is None:
+            self.model = self._build_model()
 
     def _prep_fresh_state(self, gym_env):
         """
@@ -196,10 +199,3 @@ class DQNAgent:
 
         self._play_through(gym_env, n_episodes=n_episodes, max_episode_length=max_episode_length, load_path=load_path,
                            explore=False, after_step_callbacks=[lambda s: gym_env.render()])
-
-
-if __name__ == "__main__":
-    env = gym.make('LunarLander-v2')
-    agent = DQNAgent(8, 4)
-    agent.train(env, n_episodes=100)
-    #agent.play(env)
