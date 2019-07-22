@@ -1,5 +1,6 @@
 from typing import Sequence
 
+
 def execute_callbacks(callbacks, arg_dict=None):
     """
     Execute each callback in the list
