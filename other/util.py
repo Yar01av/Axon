@@ -42,3 +42,10 @@ def get_timeseq_diff(timeseq):
     """
 
     return get_seq_diff(timeseq).total_seconds()
+
+
+def safe_list_assignment(param):
+    if param is None:
+        return []
+    else:
+        return param
