@@ -20,12 +20,38 @@ from other.analytical_engine import AggregPlotter, Logger
 
 # Deep Q-learning Agent
 class DQNAgent(Agent):
-    def __init__(self, state_size, action_size, gym_env, memory=deque(maxlen=1000000), gamma=0.99, epsilon=1.0,
+    def _play_callbacks_factory(self):
+        return Agent.Callbacks(after_step_cbs=[lambda s: self.gym_env.render()])
+
+    def _train_callbacks_factory(self):
+        # Set up an analytical tools
+        plotter = AggregPlotter()
+        logger = Logger()
+
+        # Prepare callbacks
+        after_step_callbacks = [lambda s: self.remember(s["state"], s["action"], s["reward"], s["next_state"],
+                                                        s["done"]),  # Store the experience
+                                lambda s: self.replay(self.batch_size),  # Train on the experiences
+                                lambda s: self._explore_less(),
+                                lambda s: plotter.add_to_curr_batch(datetime.now()),
+                                lambda s: logger.remember(s["reward"])]  # Remember for future logging
+        after_episode_callbacks = [lambda s: plotter.finish_curr_batch(),
+                                   lambda s: logger.log(f"Score: {np.sum(logger.memory)} \t Episode: {s['e']}"),
+                                   lambda s: logger.forget()]  # Empty the memory after taking the sum
+        after_gameloop_callbacks = [lambda s: plotter.plot(aggregator=get_timeseq_diff)]
+        # plot the lenghts of the games (differences of each sequence)
+
+        return Agent.Callbacks(after_step_cbs=after_step_callbacks,
+                               after_episode_cbs=after_episode_callbacks,
+                               after_gameloop_cbs=after_gameloop_callbacks)
+
+    def __init__(self, state_size, action_size, gym_env, memory=deque(maxlen=1000000), gamma=0.99, batch_size=34, epsilon=1.0,
                  epsilon_min=0.01, epsilon_decay=0.996, learning_rate=0.001, model=None):
-        super().__init__(gym_env, state_size)
+        super().__init__(gym_env, state_size, action_size)
         self.state_size = state_size
         self.action_size = action_size
         self.memory = memory
+        self.batch_size = batch_size
         self.gamma = gamma   # discount rate
         self.epsilon = epsilon  # exploration rate
         self.epsilon_min = epsilon_min
@@ -52,8 +78,7 @@ class DQNAgent(Agent):
             self.epsilon *= self.epsilon_decay
 
     def _dqn_play(self, batch_size=64, n_episodes=100, max_episode_length=3000, save_path="last_save.h5",
-                        explore=True, load_path=None, after_step_callbacks=None, after_gameloop_callbacks=None,
-                        after_episode_callbacks=None):
+                  explore=True, load_path=None, callbacks="play"):
         """
         Go through the main game loop (e.g. for training or just playing) using
         DQN related features (like saving models and exploration)
@@ -63,11 +88,7 @@ class DQNAgent(Agent):
         :param max_episode_length: length of each game
         :param n_episodes: number of games
         :param save_path: where to save the network after training
-        :param gym_env: the game environment
         :param explore: randomize the action for exploration when true
-        :param after_episode_callbacks: methods to execute after the end of an episode
-        :param after_step_callbacks: methods to execute after the end of a step
-        :param after_gameloop_callbacks: methods to execute after the end of a game (episode)
         :return: None
         """
         # Overwrite the build model if needed
@@ -77,10 +98,7 @@ class DQNAgent(Agent):
         self.explore = explore  # Explore if needed
 
         # Iterate the game
-        super()._play_through(max_episode_length=max_episode_length, n_episodes=n_episodes,
-                              after_step_callbacks=after_step_callbacks,
-                              after_gameloop_callbacks=after_gameloop_callbacks,
-                              after_episode_callbacks=after_episode_callbacks)
+        super()._play_through(max_episode_length=max_episode_length, n_episodes=n_episodes, callbacks=callbacks)
 
         if save_path is not None:
             self.save_as(save_path)
@@ -137,31 +155,11 @@ class DQNAgent(Agent):
         :param max_episode_length: length of each game
         :param n_episodes: number of games
         :param save_path: where to save the network after training
-        :param gym_env: the game environment
         :return: None
         """
 
-        # Set up an analytical tools
-        plotter = AggregPlotter()
-        logger = Logger()
-
-        # Prepare callbacks
-        after_step_callbacks = [lambda s: self.remember(s["state"], s["action"], s["reward"], s["next_state"],
-                                                           s["done"]),  # Store the experience
-                                lambda s: self.replay(batch_size),  # Train on the experiences
-                                lambda s: self._explore_less(),
-                                lambda s: plotter.add_to_curr_batch(datetime.now()),
-                                lambda s: logger.remember(s["reward"])]  # Remember for future logging
-        after_episode_callbacks = [lambda s: plotter.finish_curr_batch(),
-                                   lambda s: logger.log(f"Score: {np.sum(logger.memory)} \t Episode: {s['e']}"),
-                                   lambda s: logger.forget()]  # Empty the memory after taking the sum
-        after_gameloop_callbacks = [lambda s: plotter.plot(aggregator=get_timeseq_diff)]
-                                        # plot the lenghts of the games (differences of each sequence)
-
         self._dqn_play(n_episodes=n_episodes, max_episode_length=max_episode_length, save_path=save_path,
-                       load_path=load_path, after_step_callbacks=after_step_callbacks,
-                       after_episode_callbacks=after_episode_callbacks,
-                       after_gameloop_callbacks=after_gameloop_callbacks)
+                       load_path=load_path, callbacks="train")
 
     def play(self, n_episodes=100, max_episode_length=3000, load_path="last_save.h5"):
         """
@@ -170,9 +168,8 @@ class DQNAgent(Agent):
         :param load_path: load the model from...
         :param max_episode_length: length of each game
         :param n_episodes: number of games
-        :param gym_env: the game environment
         :return: None
         """
 
         self._dqn_play(n_episodes=n_episodes, max_episode_length=max_episode_length, load_path=load_path,
-                       explore=False, after_step_callbacks=[lambda s: self.gym_env.render()])
+                       explore=False)
