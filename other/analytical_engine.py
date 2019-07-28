@@ -49,7 +49,7 @@ class Logger():
 
     def remember(self, value):
         """
-        Store the value in the loggers memeory
+        Store the value in the loggers memory
 
         :param value: value to store
         :return:
@@ -80,5 +80,5 @@ class Logger():
         if self.count % interval == 0:
             print(f"{message} \t at {datetime.datetime.now()}")
 
-        self.count+=1
+        self.count += 1
 

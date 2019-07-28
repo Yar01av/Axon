@@ -1,7 +1,7 @@
 import numpy as np
 
 from agent import Agent
-from other.util import execute_callbacks, get_timeseq_diff
+from other.util import get_timeseq_diff
 from keras.layers import Dense
 from keras.models import Sequential
 from collections import deque
@@ -39,14 +39,14 @@ class DQNAgent(Agent):
                                    lambda s: logger.log(f"Score: {np.sum(logger.memory)} \t Episode: {s['e']}"),
                                    lambda s: logger.forget()]  # Empty the memory after taking the sum
         after_gameloop_callbacks = [lambda s: plotter.plot(aggregator=get_timeseq_diff)]
-        # plot the lenghts of the games (differences of each sequence)
+        # plot the lengths of the games (differences of each sequence)
 
         return Agent.Callbacks(after_step_cbs=after_step_callbacks,
                                after_episode_cbs=after_episode_callbacks,
                                after_gameloop_cbs=after_gameloop_callbacks)
 
-    def __init__(self, state_size, action_size, gym_env, memory=deque(maxlen=1000000), gamma=0.99, batch_size=34, epsilon=1.0,
-                 epsilon_min=0.01, epsilon_decay=0.996, learning_rate=0.001, model=None):
+    def __init__(self, state_size, action_size, gym_env, memory=deque(maxlen=1000000), gamma=0.99, batch_size=34,
+                 epsilon=1.0, epsilon_min=0.01, epsilon_decay=0.996, learning_rate=0.001, model=None):
         super().__init__(gym_env, state_size, action_size)
         self.state_size = state_size
         self.action_size = action_size
@@ -77,7 +77,7 @@ class DQNAgent(Agent):
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
-    def _dqn_play(self, batch_size=64, n_episodes=100, max_episode_length=3000, save_path="last_save.h5",
+    def _dqn_play(self, n_episodes=100, max_episode_length=3000, save_path="last_save.h5",
                   explore=True, load_path=None, callbacks="play"):
         """
         Go through the main game loop (e.g. for training or just playing) using

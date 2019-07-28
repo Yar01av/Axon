@@ -1,4 +1,3 @@
-import gym
 from abc import ABC, abstractmethod
 import numpy as np
 from other.util import execute_callbacks, safe_list_assignment
