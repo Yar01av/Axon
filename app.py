@@ -3,9 +3,9 @@ Run this file to use the application!
 """
 
 import gym
-from basic_dqn_agent import DQNAgent
+from agents.basic_dqn_agent import DQNAgent
 from env_config import lunar_lander_basic, cart_pole
-from random_agent import RandomAgent
+from agents.random_agent import RandomAgent
 
 if __name__ == "__main__":
     config = lunar_lander_basic

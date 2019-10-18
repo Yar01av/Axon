@@ -1,6 +1,6 @@
 import numpy as np
 
-from agent import Agent
+from agents.agent import Agent
 from other.util import get_timeseq_diff
 from keras.layers import Dense
 from keras.models import Sequential
