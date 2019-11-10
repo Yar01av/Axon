@@ -11,10 +11,10 @@ from agents.random_agent import RandomAgent
 if __name__ == "__main__":
     config = lunar_lander_basic
 
-    env = gym.make(config["env_name"])
+    env = config["env"]
 
     # Uncomment for DQN agent
-    agent = TorchDQNAgent(config["input_dim"], config["output_dim"], gym_env=env)
+    agent = TorchDQNAgent(config["obs_dim"], config["action_dim"], gym_env=env)
     agent.train(n_episodes=400)
     agent.play()
 

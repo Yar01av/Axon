@@ -1,9 +1,10 @@
 # Basic configurations of the possible environments
+import gym
 
-lunar_lander_basic = {"env_name": 'LunarLander-v2',
-                      "input_dim": 8,
-                      "output_dim": 4}
+lunar_lander_basic = {"env": gym.make('LunarLander-v2'),
+                      "obs_dim": 8,
+                      "action_dim": 4}
 
-cart_pole = {"env_name": 'CartPole-v1',
-             "input_dim": 4,
-             "output_dim": 2}
+cart_pole = {"env": gym.make('CartPole-v1'),
+             "obs_dim": 4,
+             "action_dim": 2}
