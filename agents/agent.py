@@ -12,6 +12,7 @@ class Agent(ABC):
         """
         Class that encapsulates actions to be taken at different stages of the gameplay loop
         """
+        @abstractmethod
         def __init__(self, after_step_cbs=None, after_gameloop_cbs=None, after_episode_cbs=None):
             """
             :param after_step_cbs: List of callbacks to be executed after each step

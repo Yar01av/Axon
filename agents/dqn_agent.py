@@ -1,6 +1,7 @@
+from abc import abstractmethod
 import numpy as np
-
 from agents.agent import Agent
+from models.model import Model
 from other.util import get_timeseq_diff
 from keras.layers import Dense
 from keras.models import Sequential
@@ -12,41 +13,13 @@ from keras.models import load_model
 from datetime import datetime
 from other.analytical_engine import AggregPlotter, Logger
 
-# EPISODES = 100
-# MAX_EPISODE_LENGTH = 3000
-# REPLAY_SIZE = 64
-# DEFAULT_SAVE_PATH = "last_save3.h5"
-
 
 # Deep Q-learning Agent
 class DQNAgent(Agent):
-    def _play_callbacks_factory(self):
-        return Agent.Callbacks(after_step_cbs=[lambda s: self.gym_env.render()])
-
-    def _train_callbacks_factory(self):
-        # Set up an analytical tools
-        plotter = AggregPlotter()
-        logger = Logger()
-
-        # Prepare callbacks
-        after_step_callbacks = [lambda s: self.remember(s["state"], s["action"], s["reward"], s["next_state"],
-                                                        s["done"]),  # Store the experience
-                                lambda s: self.replay(self.batch_size),  # Train on the experiences
-                                lambda s: self._explore_less(),
-                                lambda s: plotter.add_to_curr_batch(datetime.now()),
-                                lambda s: logger.remember(s["reward"])]  # Remember for future logging
-        after_episode_callbacks = [lambda s: plotter.finish_curr_batch(),
-                                   lambda s: logger.log(f"Score: {np.sum(logger.memory)} \t Episode: {s['e']}"),
-                                   lambda s: logger.forget()]  # Empty the memory after taking the sum
-        after_gameloop_callbacks = [lambda s: plotter.plot(aggregator=get_timeseq_diff)]
-        # plot the lengths of the games (differences of each sequence)
-
-        return Agent.Callbacks(after_step_cbs=after_step_callbacks,
-                               after_episode_cbs=after_episode_callbacks,
-                               after_gameloop_cbs=after_gameloop_callbacks)
-
+    # Note that the learning rate is only considered if there is no model provided
+    @abstractmethod
     def __init__(self, state_size, action_size, gym_env, memory=deque(maxlen=1000000), gamma=0.99, batch_size=34,
-                 epsilon=1.0, epsilon_min=0.01, epsilon_decay=0.996, learning_rate=0.001, model=None):
+                 epsilon=1.0, epsilon_min=0.01, epsilon_decay=0.996, learning_rate=0.001, model: Model = None):
         super().__init__(gym_env, state_size, action_size)
         self.state_size = state_size
         self.action_size = action_size
@@ -58,20 +31,40 @@ class DQNAgent(Agent):
         self.epsilon_decay = epsilon_decay
         self.learning_rate = learning_rate
         self.explore = False
+        self._model = model
 
         if model is None:
-            self.model = self._build_model()
+            self._model = self._build_model()
 
+    def _play_callbacks_factory(self):
+        return Agent.Callbacks(after_step_cbs=[lambda s: self.gym_env.render()])
+
+    def _train_callbacks_factory(self):
+        # Set up an analytical tools
+        plotter = AggregPlotter()
+        logger = Logger()
+
+        # Prepare callbacks
+        after_step_callbacks = [lambda s: self.remember(s["state"], s["action"], s["reward"], s["next_state"],
+                                                        s["done"]),  # Store the experience
+                                lambda s: self._replay(self.batch_size),  # Train on the experiences
+                                lambda s: self._explore_less(),
+                                lambda s: plotter.add_to_curr_batch(s["reward"]),
+                                lambda s: logger.remember(s["reward"])]  # Remember for future logging
+        after_episode_callbacks = [lambda s: plotter.finish_curr_batch(),
+                                   lambda s: logger.log(f"Score: {np.sum(logger.memory)} \t Episode: {s['e']}"),
+                                   lambda s: logger.forget()]  # Empty the memory after taking the sum
+        after_gameloop_callbacks = [lambda s: plotter.plot()]
+        # plot the lengths of the games (differences of each sequence)
+
+        return Agent.Callbacks(after_step_cbs=after_step_callbacks,
+                               after_episode_cbs=after_episode_callbacks,
+                               after_gameloop_cbs=after_gameloop_callbacks)
+
+    # Neural Net for Deep-Q learning Model
+    @abstractmethod
     def _build_model(self):
-        # Neural Net for Deep-Q learning Model
-        model = Sequential()
-        model.add(Dense(150, input_dim=self.state_size, activation='relu'))
-        model.add(Dense(120, activation='relu'))
-        model.add(Dense(self.action_size, activation='linear'))
-        model.compile(loss='mse',
-                      optimizer=Adam(lr=self.learning_rate))
-
-        return model
+        pass
 
     def _explore_less(self):
         if self.epsilon > self.epsilon_min:
@@ -83,7 +76,7 @@ class DQNAgent(Agent):
         Go through the main game loop (e.g. for training or just playing) using
         DQN related features (like saving models and exploration)
 
-        :param load_path: load the model from...
+        :param load_path: load the _model from...
         :param batch_size: number of experiences to consider at every training
         :param max_episode_length: length of each game
         :param n_episodes: number of games
@@ -91,9 +84,9 @@ class DQNAgent(Agent):
         :param explore: randomize the action for exploration when true
         :return: None
         """
-        # Overwrite the build model if needed
+        # Overwrite the build _model if needed
         if load_path is not None:
-            self.model = load_model(load_path)
+            self._model.load_model(load_path)
 
         self.explore = explore  # Explore if needed
 
@@ -110,14 +103,16 @@ class DQNAgent(Agent):
         # Randomize the action for exploration
         if np.random.rand() <= self.epsilon and self.explore:
             return random.randrange(self.action_size)
-        act_values = self.model.predict(state)
+
+        act_values = self._model.predict(state)
 
         return np.argmax(act_values[0])  # returns action
 
     def save_as(self, path):
-        self.model.save(path)
+        self._model.save(path)
 
-    def replay(self, batch_size=64):
+    @abstractmethod
+    def _replay(self, batch_size=64):
         """
         Learn from experiences
 
@@ -125,32 +120,14 @@ class DQNAgent(Agent):
         :return: None
         """
 
-        if len(self.memory) < batch_size:
-            return
-
-        minibatch = random.sample(self.memory, batch_size)
-        states = np.array([i[0] for i in minibatch])
-        actions = np.array([i[1] for i in minibatch])
-        rewards = np.array([i[2] for i in minibatch])
-        next_states = np.array([i[3] for i in minibatch])
-        dones = np.array([i[4] for i in minibatch])
-
-        states = np.squeeze(states)
-        next_states = np.squeeze(next_states)
-
-        targets = rewards + self.gamma * (np.amax(self.model.predict(next_states), axis=1)) * (1 - dones)
-        targets_full = self.model.predict(states)
-        ind = np.array([i for i in range(batch_size)])
-        targets_full[[ind], [actions]] = targets
-
-        self.model.fit(states, targets_full, epochs=1, verbose=0)
+        pass
 
     def train(self, batch_size=64, n_episodes=100, max_episode_length=3000, save_path="last_save.h5",
               load_path=None):
         """
         Trains the agent by playing games
 
-        :param load_path: load the model from...
+        :param load_path: load the _model from...
         :param batch_size: number of experiences to consider at every training
         :param max_episode_length: length of each game
         :param n_episodes: number of games
@@ -165,7 +142,7 @@ class DQNAgent(Agent):
         """
         Plays games without training
 
-        :param load_path: load the model from...
+        :param load_path: load the _model from...
         :param max_episode_length: length of each game
         :param n_episodes: number of games
         :return: None

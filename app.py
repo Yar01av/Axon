@@ -3,7 +3,8 @@ Run this file to use the application!
 """
 
 import gym
-from agents.basic_dqn_agent import DQNAgent
+from agents.keras_dqn_agent import KerasDQNAgent
+from agents.torch_dqn_agent import TorchDQNAgent
 from env_config import lunar_lander_basic, cart_pole
 from agents.random_agent import RandomAgent
 
@@ -13,8 +14,8 @@ if __name__ == "__main__":
     env = gym.make(config["env_name"])
 
     # Uncomment for DQN agent
-    agent = DQNAgent(config["input_dim"], config["output_dim"], gym_env=env)
-    agent.train(n_episodes=50)
+    agent = TorchDQNAgent(config["input_dim"], config["output_dim"], gym_env=env)
+    agent.train(n_episodes=400)
     agent.play()
 
     # Uncomment for random agent
