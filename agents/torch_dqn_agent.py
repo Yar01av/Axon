@@ -2,8 +2,8 @@ from collections import deque
 import random
 
 import numpy as np
-from torch import cuda
-from torch import nn, tensor, squeeze, argmax, add, mul, optim
+from torch import cuda, float32, long, int8
+from torch import nn, tensor, squeeze, max, add, mul, optim, sub
 
 from agents.dqn_agent import DQNAgent
 from models.torch_model import TorchModel
@@ -31,7 +31,7 @@ class TorchDQNAgent(DQNAgent):
 
         return TorchModel(model, lr=0.001)
 
-    def _replay(self, batch_size=64):
+    def _replay(self, batch_size):
         if len(self.memory) < batch_size:
             return
 
@@ -54,22 +54,31 @@ class TorchDQNAgent(DQNAgent):
             return
 
         minibatch = random.sample(self.memory, batch_size)
-        states = np.array([i[0] for i in minibatch])
-        actions = np.array([i[1] for i in minibatch])
-        rewards = np.array([i[2] for i in minibatch])
-        next_states = np.array([i[3] for i in minibatch])
-        dones = np.array([i[4] for i in minibatch])
+        states = tensor([i[0] for i in minibatch], dtype=float32)
+        actions = tensor([i[1] for i in minibatch], dtype=long)
+        rewards = tensor([i[2] for i in minibatch], dtype=float32)
+        next_states = tensor([i[3] for i in minibatch], dtype=float32)
+        dones = tensor([i[4] for i in minibatch], dtype=int8)
 
-        states = np.squeeze(states)
-        next_states = np.squeeze(next_states)
+        states = squeeze(states)
+        next_states = squeeze(next_states)
 
-        targets = rewards + self.gamma * (np.amax(self._model.predict(next_states), axis=1)) * (1 - dones)
-        targets_full = self._model.predict(states)
-        ind = np.array([i for i in range(batch_size)])
+        targets = rewards + \
+                  self.gamma * max(tensor(self._model.predict(next_states), dtype=float32), dim=1)[0] \
+                  * (-dones + 1)
+        targets_full = tensor(self._model.predict(states), dtype=float32)
+        ind = tensor([i for i in range(batch_size)], dtype=long)
+
+        targets_full = np.array(targets_full)
+        ind = np.array(ind)
+        actions = np.array(actions)
+        targets = np.array(targets)
         targets_full[[ind], [actions]] = targets
+        targets_full = tensor(targets_full, dtype=float32)
+        #targets_full[ind, actions] = targets
 
-        # Convert to ndarrays to tensors
-        states = states
-        targets_full = targets_full
+        # Convert to tensors to ndarrays
+        states = states.numpy()
+        targets_full = targets_full.numpy()
 
         self._model.fit(states, targets_full)

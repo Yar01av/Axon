@@ -112,7 +112,7 @@ class DQNAgent(Agent):
         self._model.save(path)
 
     @abstractmethod
-    def _replay(self, batch_size=64):
+    def _replay(self, batch_size):
         """
         Learn from experiences
 

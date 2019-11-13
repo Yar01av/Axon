@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
     # Uncomment for DQN agent
     agent = TorchDQNAgent(config["obs_dim"], config["action_dim"], gym_env=env)
-    agent.train(n_episodes=400)
+    agent.train(n_episodes=250)
     agent.play()
 
     # Uncomment for random agent
