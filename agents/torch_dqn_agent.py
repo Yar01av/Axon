@@ -22,12 +22,6 @@ class TorchDQNAgent(DQNAgent):
                               nn.ReLU(),
                               nn.Linear(120, self.action_size),
                               )
-        # _model = Sequential()
-        # _model.add(Dense(150, input_dim=self.state_size, activation='relu'))
-        # _model.add(Dense(120, activation='relu'))
-        # _model.add(Dense(self.action_size, activation='linear'))
-        # _model.compile(loss='mse',
-        #               optimizer=Adam(lr=self.learning_rate))
 
         return TorchModel(model, lr=0.001)
 
@@ -54,31 +48,27 @@ class TorchDQNAgent(DQNAgent):
             return
 
         minibatch = random.sample(self.memory, batch_size)
-        states = tensor([i[0] for i in minibatch], dtype=float32)
-        actions = tensor([i[1] for i in minibatch], dtype=long)
-        rewards = tensor([i[2] for i in minibatch], dtype=float32)
-        next_states = tensor([i[3] for i in minibatch], dtype=float32)
-        dones = tensor([i[4] for i in minibatch], dtype=int8)
+        states = tensor([i[0] for i in minibatch], dtype=float32).to("cuda")
+        actions = tensor([i[1] for i in minibatch], dtype=long).to("cuda")
+        rewards = tensor([i[2] for i in minibatch], dtype=float32).to("cuda")
+        next_states = tensor([i[3] for i in minibatch], dtype=float32).to("cuda")
+        dones = tensor([i[4] for i in minibatch], dtype=int8).to("cuda")
 
         states = squeeze(states)
         next_states = squeeze(next_states)
 
         targets = rewards + \
-                  self.gamma * max(tensor(self._model.predict(next_states), dtype=float32), dim=1)[0] \
+                  self.gamma * max(tensor(self._model.predict(next_states), dtype=float32), dim=1)[0].to("cuda") \
                   * (-dones + 1)
-        targets_full = tensor(self._model.predict(states), dtype=float32)
-        ind = tensor([i for i in range(batch_size)], dtype=long)
+        targets.to("cuda")
+        targets_full = tensor(self._model.predict(states), dtype=float32).to("cuda")
+        ind = tensor([i for i in range(batch_size)], dtype=long).to("cuda")
 
-        targets_full = np.array(targets_full)
-        ind = np.array(ind)
-        actions = np.array(actions)
-        targets = np.array(targets)
-        targets_full[[ind], [actions]] = targets
-        targets_full = tensor(targets_full, dtype=float32)
+        targets_full[ind, actions] = targets
         #targets_full[ind, actions] = targets
 
         # Convert to tensors to ndarrays
-        states = states.numpy()
-        targets_full = targets_full.numpy()
+        states = states.to("cpu").numpy()
+        targets_full = targets_full.to("cpu").numpy()
 
         self._model.fit(states, targets_full)

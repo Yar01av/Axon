@@ -9,6 +9,10 @@ class Model(ABC):
 
     @abstractmethod
     def __init__(self, model, lr=0.001):
+        """
+        :param model: Structure of the model (layers) excluding anything else
+        :param lr: learning rate of the model
+        """
         self.lr = lr
         self._model = model
 
