@@ -1,6 +1,6 @@
 from warnings import warn
 
-from torch import nn, optim, tensor, float32
+from torch import nn, optim, tensor, float32, save, load
 from models.model import Model
 
 
@@ -13,7 +13,7 @@ class TorchModel(Model):
         self._optimizer = optim.Adam(self._model.parameters(), lr=self.lr)
 
     def save(self, path):
-        warn("Saving not implemented")
+        save(self._model, path)
 
     def predict(self, X):
         return self._model(tensor(X, dtype=float32)
@@ -23,7 +23,7 @@ class TorchModel(Model):
                    .numpy()
 
     def load_model(self, load_path):
-        warn("Loading not implemented")
+        self._model = load(load_path)
 
     def fit(self, X, y, **kwargs):
         predictions = self._model(tensor(X, dtype=float32).to("cuda"))

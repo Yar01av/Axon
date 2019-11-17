@@ -3,6 +3,7 @@ Run this file to use the application!
 """
 
 import gym
+import sklearn
 from agents.keras_dqn_agent import KerasDQNAgent
 from agents.torch_dqn_agent import TorchDQNAgent
 from env_config import lunar_lander_basic, cart_pole
@@ -15,7 +16,7 @@ if __name__ == "__main__":
 
     # Uncomment for DQN agent
     agent = TorchDQNAgent(config["obs_dim"], config["action_dim"], gym_env=env)
-    agent.train(n_episodes=250)
+    agent.train(n_episodes=100)
     agent.play()
 
     # Uncomment for random agent
