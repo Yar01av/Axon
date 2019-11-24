@@ -1,5 +1,7 @@
 from abc import abstractmethod
 import numpy as np
+from tensorboardX import SummaryWriter
+
 from agents.agent import Agent
 from models.model import Model
 from other.util import get_timeseq_diff
@@ -41,7 +43,7 @@ class DQNAgent(Agent):
 
     def _train_callbacks_factory(self):
         # Set up an analytical tools
-        plotter = AggregPlotter()
+        plotter = SummaryWriter(comment="Rewards per Episode")
         logger = Logger()
 
         # Prepare callbacks
@@ -49,12 +51,16 @@ class DQNAgent(Agent):
                                                         s["done"]),  # Store the experience
                                 lambda s: self._replay(self.batch_size),  # Train on the experiences
                                 lambda s: self._explore_less(),
-                                lambda s: plotter.add_to_curr_batch(s["reward"]),
+                                # Do analytics
+                                lambda s: s.update({"episode_reward_sum":
+                                                    s.get("episode_reward_sum", 0) + s["reward"]}),
                                 lambda s: logger.remember(s["reward"])]  # Remember for future logging
-        after_episode_callbacks = [lambda s: plotter.finish_curr_batch(),
+        after_episode_callbacks = [lambda s: plotter.add_scalar("Per Episode Reward", s["episode_reward_sum"],
+                                                                s["e"]),
+                                   lambda s: s.update({"episode_reward_sum": 0}),
                                    lambda s: logger.log(f"Score: {np.sum(logger.memory)} \t Episode: {s['e']}"),
                                    lambda s: logger.forget()]  # Empty the memory after taking the sum
-        after_gameloop_callbacks = [lambda s: plotter.plot()]
+        after_gameloop_callbacks = [lambda s: plotter.close()]
         # plot the lengths of the games (differences of each sequence)
 
         return Agent.Callbacks(after_step_cbs=after_step_callbacks,

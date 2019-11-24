@@ -15,8 +15,8 @@ if __name__ == "__main__":
     env = config["env"]
 
     # Uncomment for DQN agent
-    agent = TorchDQNAgent(config["obs_dim"], config["action_dim"], gym_env=env)
-    agent.train(n_episodes=100)
+    agent = KerasDQNAgent(config["obs_dim"], config["action_dim"], gym_env=env)
+    agent.train(n_episodes=50)
     agent.play()
 
     # Uncomment for random agent
