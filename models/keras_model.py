@@ -21,4 +21,4 @@ class KerasModel(Model):
         self._model = load_model(load_path)
 
     def fit(self, X, y, **kwargs):
-        self._model.fit(X, y, batch_size=len(X), epochs=1, verbose=0)
+        self._model.fit(X, y, batch_size=kwargs.get("batch_size", len(X)), epochs=1, verbose=0)

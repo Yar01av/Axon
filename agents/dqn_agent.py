@@ -83,7 +83,6 @@ class DQNAgent(Agent):
         DQN related features (like saving models and exploration)
 
         :param load_path: load the _model from...
-        :param batch_size: number of experiences to consider at every training
         :param max_episode_length: length of each game
         :param n_episodes: number of games
         :param save_path: where to save the network after training

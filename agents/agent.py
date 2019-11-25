@@ -95,12 +95,14 @@ class Agent(ABC):
         state = gym_env.reset()
         return np.reshape(state, [1, self.state_size])
 
-    def _play_through(self, max_episode_length=3000, n_episodes=200, callbacks=None):
+    def _play_through(self, max_episode_length=3000, n_episodes=200, save_path="last_save.h5",
+                      explore=True, load_path=None, callbacks=None):
         """
         Go through the main game loop (e.g. for training or just playing)
 
         :param max_episode_length: length of each game
         :param n_episodes: number of games
+        :param save_path: where to save the model after training
         :param callbacks: Callbacks to be executed at different stages in the gameloop. "play" uses the instance
         returned by _play_callbacks_factory and "train" uses the instance
         returned by _train_callbacks_factory
