@@ -16,7 +16,7 @@ if __name__ == "__main__":
 
     # Uncomment for DQN agent
     agent = KerasDQNAgent(config["obs_dim"], config["action_dim"], gym_env=env)
-    agent.train(n_episodes=50)
+    agent.train(n_episodes=10)
     agent.play()
 
     # Uncomment for random agent

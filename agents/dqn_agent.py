@@ -77,7 +77,7 @@ class DQNAgent(Agent):
             self.epsilon *= self.epsilon_decay
 
     def _dqn_play(self, n_episodes=100, max_episode_length=3000, save_path="last_save.h5",
-                  explore=True, load_path=None, callbacks="play"):
+                  explore=True, load_path=None, callbacks=None):
         """
         Go through the main game loop (e.g. for training or just playing) using
         DQN related features (like saving models and exploration)
@@ -142,7 +142,7 @@ class DQNAgent(Agent):
         """
 
         self._dqn_play(n_episodes=n_episodes, max_episode_length=max_episode_length, save_path=save_path,
-                       load_path=load_path, callbacks="train")
+                       load_path=load_path, callbacks=self._train_callbacks_factory())
 
     def play(self, n_episodes=100, max_episode_length=3000, load_path="last_save.h5"):
         """

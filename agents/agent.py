@@ -71,7 +71,7 @@ class Agent(ABC):
         :return: None
         """
 
-        self._play_through(max_episode_length, n_episodes, callbacks="play")
+        self._play_through(max_episode_length, n_episodes, callbacks=self._play_callbacks_factory())
 
     def train(self, max_episode_length=3000, n_episodes=200):
         """
@@ -82,7 +82,7 @@ class Agent(ABC):
         :return: None
         """
 
-        self._play_through(max_episode_length, n_episodes, callbacks="train")
+        self._play_through(max_episode_length, n_episodes, callbacks=self._train_callbacks_factory())
 
     def _prep_fresh_state(self, gym_env):
         """
@@ -95,7 +95,7 @@ class Agent(ABC):
         state = gym_env.reset()
         return np.reshape(state, [1, self.state_size])
 
-    def _play_through(self, max_episode_length=3000, n_episodes=200, callbacks="play"):
+    def _play_through(self, max_episode_length=3000, n_episodes=200, callbacks=None):
         """
         Go through the main game loop (e.g. for training or just playing)
 
@@ -108,12 +108,8 @@ class Agent(ABC):
         """
 
         # Translate
-        if callbacks == "play":
+        if callbacks is None:
             callbacks = self._play_callbacks_factory()
-        elif callbacks == "train":
-            callbacks = self._train_callbacks_factory()
-        else:
-            raise AssertionError("Invalid choice for callbacks argument!")
 
         for e in range(n_episodes):
             # reset state in the beginning of each game
