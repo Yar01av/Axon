@@ -34,7 +34,8 @@ class Agent(ABC):
             self.after_episode_cbs.append(cb)
 
     @abstractmethod
-    def __init__(self, gym_env, state_size, action_size):
+    def __init__(self, gym_env, state_size, action_size, model=None):
+        self._model = model
         self.action_size = action_size
         self.state_size = state_size
         self.gym_env = gym_env
@@ -62,10 +63,11 @@ class Agent(ABC):
     def act(self, state):
         pass
 
-    def play(self, max_episode_length=3000, n_episodes=200):
+    def play(self, max_episode_length=3000, n_episodes=200, load_path="last_save.h5"):
         """
         Plays the game using the agent and is a curried method
 
+        :param load_path:
         :param max_episode_length: maximum length of each game
         :param n_episodes: number of games to play
         :return: None
@@ -73,10 +75,13 @@ class Agent(ABC):
 
         self._play_through(max_episode_length, n_episodes, callbacks=self._play_callbacks_factory())
 
-    def train(self, max_episode_length=3000, n_episodes=200):
+    def train(self, max_episode_length=3000, n_episodes=200, save_path="last_save.h5",
+              load_path=None):
         """
         Trains the agent
 
+        :param load_path:
+        :param save_path:
         :param max_episode_length: maximum length of each game
         :param n_episodes: number of games to play
         :return: None
@@ -96,7 +101,7 @@ class Agent(ABC):
         return np.reshape(state, [1, self.state_size])
 
     def _play_through(self, max_episode_length=3000, n_episodes=200, save_path="last_save.h5",
-                      explore=True, load_path=None, callbacks=None):
+                      load_path=None, callbacks=None):
         """
         Go through the main game loop (e.g. for training or just playing)
 
@@ -108,6 +113,10 @@ class Agent(ABC):
         returned by _train_callbacks_factory
         :return: None
         """
+
+        # Set the model to it loaded state if needed
+        if load_path is not None:
+            self._model.load_model(load_path)
 
         # Translate
         if callbacks is None:
@@ -142,3 +151,6 @@ class Agent(ABC):
             execute_callbacks(callbacks.after_episode_cbs, locals())
 
         execute_callbacks(callbacks.after_gameloop_cbs, locals())
+
+        if save_path is not None:
+            self._model.save(save_path)

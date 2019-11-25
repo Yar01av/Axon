@@ -93,8 +93,6 @@ class DQNAgent(Agent):
         if load_path is not None:
             self._model.load_model(load_path)
 
-        self.explore = explore  # Explore if needed
-
         # Iterate the game
         super()._play_through(max_episode_length=max_episode_length, n_episodes=n_episodes, callbacks=callbacks)
 
@@ -140,8 +138,10 @@ class DQNAgent(Agent):
         :return: None
         """
 
-        self._dqn_play(n_episodes=n_episodes, max_episode_length=max_episode_length, save_path=save_path,
-                       load_path=load_path, callbacks=self._train_callbacks_factory())
+        self.explore = True  # Explore if needed
+
+        self._play_through(n_episodes=n_episodes, max_episode_length=max_episode_length, save_path=save_path,
+                           callbacks=self._train_callbacks_factory())
 
     def play(self, n_episodes=100, max_episode_length=3000, load_path="last_save.h5"):
         """
@@ -153,5 +153,7 @@ class DQNAgent(Agent):
         :return: None
         """
 
-        self._dqn_play(n_episodes=n_episodes, max_episode_length=max_episode_length, load_path=load_path,
-                       explore=False)
+        self.explore = False  # Explore if needed
+
+        self._play_through(n_episodes=n_episodes, max_episode_length=max_episode_length, load_path=load_path,
+                           callbacks=self._play_callbacks_factory())
