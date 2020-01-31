@@ -3,8 +3,7 @@ from collections import deque
 import numpy as np
 from keras import Sequential
 from keras.layers import Dense
-from keras.optimizers import Adam
-from agents.dqn_agent import DQNAgent
+from agents.dqn.dqn_agent import DQNAgent
 from models.keras_model import KerasModel
 
 

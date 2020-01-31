@@ -2,12 +2,8 @@
 Run this file to use the application!
 """
 
-import gym
-import sklearn
-from agents.keras_dqn_agent import KerasDQNAgent
-from agents.torch_dqn_agent import TorchDQNAgent
-from env_config import lunar_lander_basic, cart_pole
-from agents.random_agent import RandomAgent
+from agents.dqn.keras_dqn_agent import KerasDQNAgent
+from env_config import lunar_lander_basic
 
 if __name__ == "__main__":
     config = lunar_lander_basic
@@ -16,7 +12,7 @@ if __name__ == "__main__":
 
     # Uncomment for DQN agent
     agent = KerasDQNAgent(config["obs_dim"], config["action_dim"], gym_env=env)
-    agent.train(n_episodes=30)
+    agent.train(n_episodes=100)
     agent.play(n_episodes=5)
 
     # Uncomment for random agent

@@ -1,11 +1,10 @@
 from collections import deque
 import random
 
-import numpy as np
-from torch import cuda, float32, long, int8
-from torch import nn, tensor, squeeze, max, add, mul, optim, sub
+from torch import float32, long, int8
+from torch import nn, tensor, squeeze, max
 
-from agents.dqn_agent import DQNAgent
+from agents.dqn.dqn_agent import DQNAgent
 from models.torch_model import TorchModel
 
 
