@@ -13,7 +13,7 @@ from random import random
 import random
 from keras.models import load_model
 from datetime import datetime
-from other.analytical_engine import AggregPlotter, Logger
+from other.analytical_engine import Logger
 
 
 # Deep Q-learning Agent

@@ -32,6 +32,16 @@ class KerasDQNAgent(DQNAgent):
         if len(self.memory) < batch_size:
             return
 
+        actions, dones, next_states, rewards, states = self._extract_minibatch(batch_size)
+
+        targets = rewards + self.gamma * (np.amax(self._model.predict(next_states), axis=1)) * (1 - dones)
+        targets_full = self._model.predict(states)
+        ind = np.array([i for i in range(batch_size)])
+        targets_full[[ind], [actions]] = targets
+
+        self._model.fit(states, targets_full)
+
+    def _extract_minibatch(self, batch_size):
         minibatch = random.sample(self.memory, batch_size)
         states = np.array([i[0] for i in minibatch])
         actions = np.array([i[1] for i in minibatch])
@@ -42,9 +52,4 @@ class KerasDQNAgent(DQNAgent):
         states = np.squeeze(states)
         next_states = np.squeeze(next_states)
 
-        targets = rewards + self.gamma * (np.amax(self._model.predict(next_states), axis=1)) * (1 - dones)
-        targets_full = self._model.predict(states)
-        ind = np.array([i for i in range(batch_size)])
-        targets_full[[ind], [actions]] = targets
-
-        self._model.fit(states, targets_full)
+        return actions, dones, next_states, rewards, states

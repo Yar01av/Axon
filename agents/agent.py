@@ -27,10 +27,10 @@ class Agent(ABC):
         def add_after_step_callback(self, cb):
             self.after_step_cbs.append(cb)
 
-        def after_gameloop_callback(self, cb):
+        def add_after_gameloop_callback(self, cb):
             self.after_gameloop_cbs.append(cb)
 
-        def after_episode_callback(self, cb):
+        def add_after_episode_callback(self, cb):
             self.after_episode_cbs.append(cb)
 
     @abstractmethod
