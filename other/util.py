@@ -1,5 +1,5 @@
 from typing import Sequence
-
+import copy
 
 def execute_callbacks(callbacks, arg_dict=None):
     """
@@ -49,3 +49,23 @@ def safe_list_assignment(param):
         return []
     else:
         return param
+
+
+class Variable:
+    """
+    It is a wrapper for Python's variables that can be used cleanly in lambda expressions
+    """
+
+    def __init__(self, init_value):
+        self.value = init_value
+
+    def modify_value(self, function, *args_to_function):
+        self.value = function(*args_to_function)
+
+    def get_value(self):
+        """
+
+        :return: a shallow copy of the stored value
+        """
+
+        return copy.copy(self.value)

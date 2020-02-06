@@ -1,10 +1,10 @@
 from abc import abstractmethod
 import numpy as np
 from tensorboardX import SummaryWriter
-
+from operator import add
 from agents.agent import Agent
 from models.model import Model
-from other.util import get_timeseq_diff
+from other.util import get_timeseq_diff, Variable
 from keras.layers import Dense
 from keras.models import Sequential
 from collections import deque
@@ -45,6 +45,7 @@ class DQNAgent(Agent):
         # Set up an analytical tools
         plotter = SummaryWriter(comment="Rewards per Episode")
         logger = Logger()
+        episode_reward_sum = Variable(0)
 
         # Prepare callbacks
         after_step_callbacks = [lambda s: self.remember(s["state"], s["action"], s["reward"], s["next_state"],
@@ -52,11 +53,11 @@ class DQNAgent(Agent):
                                 lambda s: self._replay(self.batch_size),  # Train on the experiences
                                 lambda s: self._explore_less(),
                                 # Do analytics
-                                lambda s: s.update({"episode_reward_sum":
-                                                    s.get("episode_reward_sum", 0) + s["reward"]}),
+                                lambda s: episode_reward_sum.modify_value(add, episode_reward_sum.get_value(),
+                                                                          s["reward"]),
                                 lambda s: logger.remember(s["reward"])]  # Remember for future logging
-        after_episode_callbacks = [lambda s: plotter.add_scalar("Per Episode Reward", s["episode_reward_sum"],
-                                                                s["e"]),
+        after_episode_callbacks = [lambda s: plotter.add_scalar("Per Episode Reward", episode_reward_sum.get_value()
+                                                                , s["e"]),
                                    lambda s: s.update({"episode_reward_sum": 0}),
                                    lambda s: logger.log(f"Score: {np.sum(logger.memory)} \t Episode: {s['e']}"),
                                    lambda s: logger.forget()]  # Empty the memory after taking the sum

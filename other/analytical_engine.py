@@ -4,40 +4,6 @@ import uuid
 import datetime
 
 
-class AggregPlotter:
-    """
-    PLots the values of aggregated batches
-    """
-
-    def __init__(self):
-        self.values = []
-        self.curr_batch = []
-
-    def add_to_curr_batch(self, value):
-        self.curr_batch.append(value)
-
-    def finish_curr_batch(self):
-        """
-        Finish editing the current batch and save it
-        """
-
-        self.values.append(list(self.curr_batch))  # Save the contents of the batch
-        self.curr_batch = []  # Prepare for the next batch
-
-    def plot(self, aggregator=np.sum):
-        """
-        Apply the aggregator and plot
-
-        :param aggregator: How to aggregate. Type: List(int) -> List(int) || int
-        """
-
-        x_values = range(len(self.values))  # Create x-axis
-        data = list(map(aggregator, self.values))  # Aggregate and make compatible with matplotlib
-
-        plt.plot(x_values, data)
-        plt.show()
-
-
 class Logger():
     """
     Logs the data into the console with additional information (TODO: and optionally saves)
