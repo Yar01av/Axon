@@ -24,7 +24,7 @@ class TorchDQNAgent(DQNAgent):
 
         return TorchModel(model, lr=0.001)
 
-    def _replay(self, batch_size):
+    def _replay(self, batch_size, gameplay_state):
         if len(self.memory) < batch_size:
             return
 

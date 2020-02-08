@@ -22,7 +22,7 @@ class FixedDQNAgent(KerasDQNAgent):
 
         return original_callbacks
 
-    def _replay(self, batch_size):
+    def _replay(self, batch_size, gameplay_state):
         if len(self.memory) < batch_size:
             return
 
@@ -34,5 +34,3 @@ class FixedDQNAgent(KerasDQNAgent):
         targets_full[[ind], [actions]] = targets
 
         self._model.fit(states, targets_full)
-
-        # TODO: test

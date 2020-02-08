@@ -13,7 +13,7 @@ from random import random
 import random
 from keras.models import load_model
 from datetime import datetime
-from other.analytical_engine import Logger
+from other.analytics import Logger
 
 
 # Deep Q-learning Agent
@@ -27,7 +27,7 @@ class DQNAgent(Agent):
         self.action_size = action_size
         self.memory = memory
         self.batch_size = batch_size
-        self.gamma = gamma   # discount rate
+        self.gamma = gamma  # discount rate
         self.epsilon = epsilon  # exploration rate
         self.epsilon_min = epsilon_min
         self.epsilon_decay = epsilon_decay
@@ -48,9 +48,9 @@ class DQNAgent(Agent):
         episode_reward_sum = Variable(0)
 
         # Prepare callbacks
-        after_step_callbacks = [lambda s: self.remember(s["state"], s["action"], s["reward"], s["next_state"],
-                                                        s["done"]),  # Store the experience
-                                lambda s: self._replay(self.batch_size),  # Train on the experiences
+        after_step_callbacks = [lambda s: self._remember(s["state"], s["action"], s["reward"], s["next_state"],
+                                                         s["done"], s),  # Store the experience
+                                lambda s: self._replay(self.batch_size, s),  # Train on the experiences
                                 lambda s: self._explore_less(),
                                 # Do analytics
                                 lambda s: episode_reward_sum.modify_value(add, episode_reward_sum.get_value(),
@@ -58,7 +58,7 @@ class DQNAgent(Agent):
                                 lambda s: logger.remember(s["reward"])]  # Remember for future logging
         after_episode_callbacks = [lambda s: plotter.add_scalar("Per Episode Reward", episode_reward_sum.get_value()
                                                                 , s["e"]),
-                                   lambda s: s.update({"episode_reward_sum": 0}),
+                                   lambda s: episode_reward_sum.modify_value(lambda: 0),
                                    lambda s: logger.log(f"Score: {np.sum(logger.memory)} \t Episode: {s['e']}"),
                                    lambda s: logger.forget()]  # Empty the memory after taking the sum
         after_gameloop_callbacks = [lambda s: plotter.close()]
@@ -100,7 +100,7 @@ class DQNAgent(Agent):
         if save_path is not None:
             self.save_as(save_path)
 
-    def remember(self, state, action, reward, next_state, done):
+    def _remember(self, state, action, reward, next_state, done, gameplay_state):
         self.memory.append((state, action, reward, next_state, done))
 
     def act(self, state):
@@ -116,11 +116,12 @@ class DQNAgent(Agent):
         self._model.save(path)
 
     @abstractmethod
-    def _replay(self, batch_size):
+    def _replay(self, batch_size, gameplay_state):
         """
         Learn from experiences
 
         :param batch_size: How many randomly chosen experiences from the memory to use
+        :param gameplay_state: Current state of the gameplay (e.g. which episode is it)
         :return: None
         """
 

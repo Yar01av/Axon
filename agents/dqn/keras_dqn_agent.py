@@ -21,7 +21,7 @@ class KerasDQNAgent(DQNAgent):
 
         return KerasModel(model, lr=self.learning_rate)
 
-    def _replay(self, batch_size):
+    def _replay(self, batch_size, gameplay_state):
         """
         Learn from experiences
 
