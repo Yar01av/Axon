@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
-from other.util import execute_callbacks, safe_list_assignment
+from other.util import execute_callbacks, convert_none_to_list
 
 
 class Agent(ABC):
@@ -13,22 +13,44 @@ class Agent(ABC):
         Class that encapsulates actions to be taken at different stages of the gameplay loop
         """
         @abstractmethod
-        def __init__(self, after_step_cbs=None, after_gameloop_cbs=None, after_episode_cbs=None):
+        def __init__(self, after_step_cbs=None, after_gameloop_cbs=None, after_episode_cbs=None,
+                     pre_gameloop_cbs=None):
             """
             :param after_step_cbs: List of callbacks to be executed after each step
             :param after_gameloop_cbs: List of callbacks to be executed at the end of all the games
             :param after_episode_cbs: List of callbacks to be executed after each game
+            :param pre_gameloop_cbs: List of callbacks to be executed before any game is played. Use these callbacks
+            when some initializations depends on whether it is playing or training time
             """
 
-            self.after_step_cbs = safe_list_assignment(after_step_cbs)
-            self.after_gameloop_cbs = safe_list_assignment(after_gameloop_cbs)
-            self.after_episode_cbs = safe_list_assignment(after_episode_cbs)
+            self.pre_gameloop_cbs = convert_none_to_list(pre_gameloop_cbs)
+            self.after_step_cbs = convert_none_to_list(after_step_cbs)
+            self.after_gameloop_cbs = convert_none_to_list(after_gameloop_cbs)
+            self.after_episode_cbs = convert_none_to_list(after_episode_cbs)
+
+        def __add__(self, other):
+            """
+            Addition appends the callbacks of the second argument after those of the first.
+            :param other:
+            :return:
+            """
+
+            if other is not None:
+                self.after_step_cbs = [*self.after_step_cbs, *convert_none_to_list(other.after_step_cbs)]
+                self.after_episode_cbs = [*self.after_episode_cbs, *convert_none_to_list(other.after_episode_cbs)]
+                self.after_gameloop_cbs = [*self.after_gameloop_cbs, *convert_none_to_list(other.after_gameloop_cbs)]
+                self.pre_gameloop_cbs = [*self.pre_gameloop_cbs, *convert_none_to_list(other.pre_gameloop_cbs)]
+
+            return self
 
         def add_after_step_callback(self, cb):
             self.after_step_cbs.append(cb)
 
         def add_after_gameloop_callback(self, cb):
             self.after_gameloop_cbs.append(cb)
+
+        def add_pre_gameloop_callback(self, cb):
+            self.pre_gameloop_cbs.append(cb)
 
         def add_after_episode_callback(self, cb):
             self.after_episode_cbs.append(cb)
@@ -75,11 +97,13 @@ class Agent(ABC):
 
         self._play_through(max_episode_length, n_episodes, callbacks=self._play_callbacks_factory())
 
-    def train(self, max_episode_length=3000, n_episodes=200, save_path="last_save.h5",
-              load_path=None):
+    def train(self, max_episode_length=3000, n_episodes=200, save_path="last_save.h5", load_path=None,
+              extra_callbacks: Callbacks = None):
         """
         Trains the agent
 
+        :param extra_callbacks: additional callbacks to execute over the course of the game loop. Note that these are
+        added AFTER any existing ones in their respective categories.
         :param load_path:
         :param save_path:
         :param max_episode_length: maximum length of each game
@@ -87,7 +111,7 @@ class Agent(ABC):
         :return: None
         """
 
-        self._play_through(max_episode_length, n_episodes, callbacks=self._train_callbacks_factory())
+        self._play_through(max_episode_length, n_episodes, callbacks=self._train_callbacks_factory() + extra_callbacks)
 
     def _prep_fresh_state(self, gym_env):
         """
@@ -101,7 +125,7 @@ class Agent(ABC):
         return np.reshape(state, [1, self.state_size])
 
     def _play_through(self, max_episode_length=3000, n_episodes=200, save_path="last_save.h5",
-                      load_path=None, callbacks=None):
+                      load_path=None, callbacks=Callbacks()):
         """
         Go through the main game loop (e.g. for training or just playing)
 
@@ -118,9 +142,7 @@ class Agent(ABC):
         if load_path is not None:
             self._model.load_model(load_path)
 
-        # Translate
-        if callbacks is None:
-            callbacks = self._play_callbacks_factory()
+        execute_callbacks(callbacks.pre_gameloop_cbs, locals())
 
         for e in range(n_episodes):
             # reset state in the beginning of each game

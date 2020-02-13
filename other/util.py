@@ -44,13 +44,14 @@ def get_timeseq_diff(timeseq):
     return get_seq_diff(timeseq).total_seconds()
 
 
-def safe_list_assignment(param):
+def convert_none_to_list(param):
     if param is None:
         return []
     else:
         return param
 
 
+# TODO remove the wrapper
 class Variable:
     """
     It is a wrapper for Python's variables that can be used cleanly in lambda expressions

@@ -37,5 +37,3 @@ class KStepsDQNAgent(FixedDQNAgent):
             self._accumulated_reward += reward*self.gamma**(self._k-1)
             super()._remember(state, action, self._accumulated_reward, next_state, done, gameplay_state)
             self._accumulated_reward = 0
-
-    # TODO test
