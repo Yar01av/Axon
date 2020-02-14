@@ -95,7 +95,8 @@ class Agent(ABC):
         :return: None
         """
 
-        self._play_through(max_episode_length, n_episodes, callbacks=self._play_callbacks_factory())
+        self._play_through(max_episode_length, n_episodes, callbacks=self._play_callbacks_factory(),
+                           load_path=load_path)
 
     def train(self, max_episode_length=3000, n_episodes=200, save_path="last_save.h5", load_path=None,
               extra_callbacks: Callbacks = None):
@@ -111,7 +112,8 @@ class Agent(ABC):
         :return: None
         """
 
-        self._play_through(max_episode_length, n_episodes, callbacks=self._train_callbacks_factory() + extra_callbacks)
+        self._play_through(max_episode_length, n_episodes, callbacks=self._train_callbacks_factory() + extra_callbacks,
+                           save_path=save_path, load_path=load_path)
 
     def _prep_fresh_state(self, gym_env):
         """

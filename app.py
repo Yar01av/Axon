@@ -6,15 +6,23 @@ from operator import add
 from tensorboardX import SummaryWriter
 import numpy as np
 from agents.agent import Agent
+from agents.dqn.double_dgn_agent import DoubleDQNAgent
 from agents.dqn.fixed_dqn_agent import FixedDQNAgent
 from agents.dqn.k_steps_dqn import KStepsDQNAgent
 from agents.dqn.keras_dqn_agent import KerasDQNAgent
 from env_config import lunar_lander_basic
 from other.analytics import Logger
 from other.util import Variable
+from numpy.random import seed
+from tensorflow import set_random_seed
+
+
+# Seed to make sure that the results are reproducible
+seed(1)
+set_random_seed(2)
 
 # Prepare some extra callbacks for analytics
-plotter = SummaryWriter(comment="xFixedDQN")
+plotter = SummaryWriter(comment="xFixedDQNAgent")
 episode_reward_sum = Variable(0)
 logger = Logger()
 analytical_callbacks = Agent.Callbacks(
@@ -38,8 +46,8 @@ if __name__ == "__main__":
     env = config["env"]
 
     # Uncomment for DQN agent
-    agent = FixedDQNAgent(config["obs_dim"], config["action_dim"], gym_env=env)
-    agent.train(n_episodes=100, extra_callbacks=analytical_callbacks)
+    agent = KerasDQNAgent(config["obs_dim"], config["action_dim"], gym_env=env)
+    agent.train(n_episodes=200, extra_callbacks=analytical_callbacks)
     agent.play(n_episodes=5)
 
     # Uncomment for random agent
