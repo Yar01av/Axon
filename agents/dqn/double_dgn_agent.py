@@ -18,13 +18,9 @@ class DoubleDQNAgent(KStepsDQNAgent):
         super().__init__(state_size, action_size, gym_env, memory, gamma, batch_size,
                          epsilon, epsilon_min, epsilon_decay, learning_rate, model, k)
 
-    def _replay(self, batch_size, gameplay_state):
-        # TODO: this overriding breaks ehat is inherited from k-steps dqn
-        if len(self.memory) < batch_size:
-            return
+    def _get_targets(self, rewards, states, actions, next_states, dones):
+        ind = np.array([i for i in range(len(states))])
 
-        actions, dones, next_states, rewards, states = self._extract_minibatch(batch_size)
-        ind = np.array([i for i in range(batch_size)])
         target_model_predictions = self._target_model.predict(next_states)
         primary_model_predictions = self._model.predict(next_states)
 
@@ -35,4 +31,4 @@ class DoubleDQNAgent(KStepsDQNAgent):
         targets_full = self._model.predict(states)
         targets_full[[ind], [actions]] = targets
 
-        self._model.fit(states, targets_full)
+        return targets_full

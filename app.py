@@ -18,11 +18,11 @@ from tensorflow import set_random_seed
 
 
 # Seed to make sure that the results are reproducible
-seed(1)
-set_random_seed(2)
+#seed(1)
+#set_random_seed(2)
 
 # Prepare some extra callbacks for analytics
-plotter = SummaryWriter(comment="xFixedDQNAgent")
+plotter = SummaryWriter(comment="xDoubleDQNAgent")
 episode_reward_sum = Variable(0)
 logger = Logger()
 analytical_callbacks = Agent.Callbacks(
@@ -47,7 +47,29 @@ if __name__ == "__main__":
 
     # Uncomment for DQN agent
     agent = KerasDQNAgent(config["obs_dim"], config["action_dim"], gym_env=env)
-    agent.train(n_episodes=200, extra_callbacks=analytical_callbacks)
+    agent.train(n_episodes=10, extra_callbacks=analytical_callbacks)
+
+    for i in range(4):
+        plotter = SummaryWriter(comment="xDoubleDQNAgent")
+        episode_reward_sum = Variable(0)
+        logger = Logger()
+        analytical_callbacks = Agent.Callbacks(
+            after_step_cbs=[lambda s: episode_reward_sum.modify_value(add, episode_reward_sum.get_value(), s["reward"]),
+                            lambda s: logger.remember(s["reward"])],
+            after_episode_cbs=[lambda s: plotter.add_scalar("Per Episode Reward",
+                                                            episode_reward_sum.get_value()
+                                                            , s["e"]),
+                               lambda s: episode_reward_sum.modify_value(lambda: 0),
+                               lambda s: logger.log(
+                                   f"Score: {np.sum(logger.memory)} \t Episode: {s['e']}"),
+                               lambda s: logger.forget()],
+            after_gameloop_cbs=[
+                lambda s: plotter.close()
+        ])
+
+        agent = DoubleDQNAgent(config["obs_dim"], config["action_dim"], gym_env=env)
+        agent.train(n_episodes=200, extra_callbacks=analytical_callbacks)
+
     agent.play(n_episodes=5)
 
     # Uncomment for random agent
