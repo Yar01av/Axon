@@ -5,12 +5,12 @@ from models.model import Model
 
 
 class TorchModel(Model):
-    def __init__(self, model, lr=0.001):
+    def __init__(self, model, lr=0.001, **kwargs):
         model.float().to("cuda")
-        super().__init__(model, lr)
+        super().__init__(model, lr, **kwargs)
 
-        self._loss_function = nn.MSELoss()
-        self._optimizer = optim.Adam(self._model.parameters(), lr=self.lr)
+        self._loss_function = kwargs["loss_function"] if "loss_function" in kwargs else nn.MSELoss()
+        self._optimizer = optim.Adam(self._model.parameters(), lr=self.lr)  # TODO parametrize
 
     def save(self, path):
         save(self._model, path)

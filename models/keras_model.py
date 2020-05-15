@@ -5,8 +5,8 @@ from models.model import Model
 
 
 class KerasModel(Model):
-    def __init__(self, model, lr=0.001):
-        super().__init__(model, lr)
+    def __init__(self, model, lr=0.001, **kwargs):
+        super().__init__(model, lr, **kwargs)
 
         model.compile(loss='mse',
                       optimizer=Adam(lr=lr))

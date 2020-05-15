@@ -56,8 +56,7 @@ class Agent(ABC):
             self.after_episode_cbs.append(cb)
 
     @abstractmethod
-    def __init__(self, gym_env, state_size, action_size, model=None):
-        self._model = model
+    def __init__(self, gym_env, state_size, action_size):
         self.action_size = action_size
         self.state_size = state_size
         self.gym_env = gym_env
@@ -85,21 +84,21 @@ class Agent(ABC):
     def act(self, state):
         pass
 
-    def play(self, max_episode_length=3000, n_episodes=200, load_path="last_save.h5"):
+    def play(self, max_episode_length=3000, n_episodes=200, extra_callbacks: Callbacks = None):
         """
         Plays the game using the agent and is a curried method
 
         :param load_path:
         :param max_episode_length: maximum length of each game
         :param n_episodes: number of games to play
+        :param extra_callbacks: additional callbacks to execute over the course of the game loop. Note that these are
+        added AFTER any existing ones in their respective categories.
         :return: None
         """
 
-        self._play_through(max_episode_length, n_episodes, callbacks=self._play_callbacks_factory(),
-                           load_path=load_path)
+        self._play_through(max_episode_length, n_episodes, callbacks=self._play_callbacks_factory() + extra_callbacks)
 
-    def train(self, max_episode_length=3000, n_episodes=200, save_path="last_save.h5", load_path=None,
-              extra_callbacks: Callbacks = None):
+    def train(self, max_episode_length=3000, n_episodes=200, extra_callbacks: Callbacks = None):
         """
         Trains the agent
 
@@ -112,8 +111,7 @@ class Agent(ABC):
         :return: None
         """
 
-        self._play_through(max_episode_length, n_episodes, callbacks=self._train_callbacks_factory() + extra_callbacks,
-                           save_path=save_path, load_path=load_path)
+        self._play_through(max_episode_length, n_episodes, callbacks=self._train_callbacks_factory() + extra_callbacks)
 
     def _prep_fresh_state(self, gym_env):
         """
@@ -126,23 +124,17 @@ class Agent(ABC):
         state = gym_env.reset()
         return np.reshape(state, [1, self.state_size])
 
-    def _play_through(self, max_episode_length=3000, n_episodes=200, save_path="last_save.h5",
-                      load_path=None, callbacks=Callbacks()):
+    def _play_through(self, max_episode_length=3000, n_episodes=200, callbacks=Callbacks()):
         """
         Go through the main game loop (e.g. for training or just playing)
 
         :param max_episode_length: length of each game
         :param n_episodes: number of games
-        :param save_path: where to save the model after training
         :param callbacks: Callbacks to be executed at different stages in the gameloop. "play" uses the instance
         returned by _play_callbacks_factory and "train" uses the instance
         returned by _train_callbacks_factory
         :return: None
         """
-
-        # Set the model to it loaded state if needed
-        if load_path is not None:
-            self._model.load_model(load_path)
 
         execute_callbacks(callbacks.pre_gameloop_cbs, locals())
 
@@ -175,6 +167,3 @@ class Agent(ABC):
             execute_callbacks(callbacks.after_episode_cbs, locals())
 
         execute_callbacks(callbacks.after_gameloop_cbs, locals())
-
-        if save_path is not None:
-            self._model.save(save_path)

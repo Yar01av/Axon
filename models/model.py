@@ -8,7 +8,7 @@ class Model(ABC):
     """
 
     @abstractmethod
-    def __init__(self, model, lr=0.001):
+    def __init__(self, model, lr=0.001, **kwargs):
         """
         :param model: Structure of the model (layers) excluding anything else
         :param lr: learning rate of the model
@@ -53,3 +53,6 @@ class Model(ABC):
         :return: None
         """
         pass
+
+    def get_model(self):
+        return self._model
