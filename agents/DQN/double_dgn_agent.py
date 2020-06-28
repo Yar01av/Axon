@@ -2,7 +2,7 @@ from collections import deque
 
 import numpy as np
 
-from agents.dqn.k_steps_dqn import KStepsDQNAgent
+from agents.DQN.k_steps_dqn import KStepsDQNAgent
 from models.model import Model
 
 

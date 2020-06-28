@@ -4,7 +4,7 @@ import random
 from torch import float32, long, int8
 from torch import nn, tensor, squeeze, max
 
-from agents.dqn.dqn_agent import DQNAgent
+from agents.DQN.dqn_agent import DQNAgent
 from models.torch_model import TorchModel
 
 

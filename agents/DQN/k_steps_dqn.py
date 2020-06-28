@@ -1,6 +1,6 @@
 from collections import deque
 
-from agents.dqn.fixed_dqn_agent import FixedDQNAgent
+from agents.DQN.fixed_dqn_agent import FixedDQNAgent
 from models.model import Model
 
 

@@ -1,6 +1,7 @@
 # Basic configurations of the possible environments
 import gym
 
+
 lunar_lander_basic = {"env": gym.make('LunarLander-v2'),
                       "obs_dim": 8,
                       "action_dim": 4}

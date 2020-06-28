@@ -2,7 +2,7 @@ from collections import deque
 
 import numpy as np
 
-from agents.dqn.keras_dqn_agent import KerasDQNAgent
+from agents.DQN.keras_dqn_agent import KerasDQNAgent
 from models.model import Model
 
 

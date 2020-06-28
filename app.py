@@ -6,12 +6,13 @@ from operator import add
 from tensorboardX import SummaryWriter
 import numpy as np
 
-from agents.REINFORCE.reinforce_agent import REINFORCEAgent
+from agents.PG.a2c_agent import A2CAgent
+from agents.PG.reinforce_agent import REINFORCEAgent
 from agents.agent import Agent
-from agents.dqn.double_dgn_agent import DoubleDQNAgent
-from agents.dqn.fixed_dqn_agent import FixedDQNAgent
-from agents.dqn.k_steps_dqn import KStepsDQNAgent
-from agents.dqn.keras_dqn_agent import KerasDQNAgent
+from agents.DQN.double_dgn_agent import DoubleDQNAgent
+from agents.DQN.fixed_dqn_agent import FixedDQNAgent
+from agents.DQN.k_steps_dqn import KStepsDQNAgent
+from agents.DQN.keras_dqn_agent import KerasDQNAgent
 from env_config import lunar_lander_basic, cart_pole
 from other.analytics import Logger
 from other.util import Variable
@@ -21,11 +22,11 @@ from tensorflow import set_random_seed
 
 # Seed to make sure that the results are reproducible
 #seed(1)
-#set_random_seed(2)
+#set_random_seed(123)
 
 # Prepare some extra callbacks for analytics
 def _get_analytical_callbacks():
-    plotter = SummaryWriter(comment="xDoubleDQNAgent")
+    plotter = SummaryWriter(comment="xREINFORCE")
     episode_reward_sum = Variable(0)
     logger = Logger()
     analytical_callbacks = Agent.Callbacks(
@@ -44,6 +45,7 @@ def _get_analytical_callbacks():
 
     return analytical_callbacks
 
+
 # Returns callbacks that handle loading and saving while the agent is training or playing.
 # Make sure that the agent actually has a model. Furthermore, make sure that the model used by the agent actually
 # implements Model base class. This is, sadly, not always the case but should be.
@@ -58,8 +60,7 @@ def _get_storage_callbacks(agent_instance, save_path=None, load_path=None):
     else:
         pre_gameloop_cbs = None
 
-    return Agent.Callbacks(pre_gameloop_cbs=pre_gameloop_cbs,
-                           after_gameloop_cbs=after_gameloop_cbs)
+    return Agent.Callbacks(pre_gameloop_cbs=pre_gameloop_cbs, after_gameloop_cbs=after_gameloop_cbs)
 
 
 if __name__ == "__main__":
@@ -72,13 +73,13 @@ if __name__ == "__main__":
     agent.train(n_episodes=10, extra_callbacks=_get_analytical_callbacks())
 
     # Do several runs to negate unlucky initializations
-    for i in range(1):
+    for i in range(5):
         agent = REINFORCEAgent(env, config["obs_dim"], config["action_dim"])
         agent.train(n_episodes=1000,
                     extra_callbacks=_get_analytical_callbacks())
                                     #+_get_storage_callbacks(agent, save_path="last_save.h5"))
 
-    agent.play(n_episodes=5)
+    agent.play(n_episodes=10)
                #, extra_callbacks=_get_storage_callbacks(agent, load_path="last_save.h5"))
 
     # Uncomment for random agent
